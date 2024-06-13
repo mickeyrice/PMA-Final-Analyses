@@ -1,0 +1,461 @@
+---
+title: "PMA Final Analyses"
+output: 
+  html_notebook:
+    toc: yes
+  html_document:
+    toc: yes
+    df_print: paged
+---
+
+# Load Libaries 
+```{r}
+#install.packages("car")
+#install.packages("lsr")
+#install.packages("MBESS")
+
+#library(car)
+#library(lsr)
+#library(MBESS)
+library(psych)
+library(tidyverse)
+library(apaTables)
+```
+
+
+# Load Libaries 
+```{r}
+PM <- read_csv("PM_Gender.csv")
+```
+
+# Recode variables 
+```{r}
+
+PM$Sex1<- 0
+PM$Sex1<-ifelse(PM$Gender=="Male",-1, 1)
+
+
+PM$Gender1<- 0
+PM$Gender1<-ifelse(PM$Gender=="Male", 0, 
+                    ifelse(PM$Gender=="Female", 1, 2))
+
+## Explaining code : PM$Gender1<- 0 creates the new variable titled Gender1 
+## PM$Gender1<-ifelse(PM$Gender ==“Male”,0 , ifelse(PM$Gender=="Female", 1, 2))) says “if the Gender is male, they will be 0, if Gender is female, they will be 1, if Gender is anything else it will be 2" 
+```
+
+```{r}
+PM_Describe <- describe(PM)
+PM_Describe
+```
+
+
+```{r}
+
+# range of STAIS
+describe(PM$STAIS)
+
+
+#zero order correlation table 
+desctable <- select(PM, STAIS, PP, Accuracy)
+
+library(apaTables)
+
+apa.cor.table(
+      desctable,
+      filename = "desctable.doc",
+      table.number = 1,
+      show.conf.interval = TRUE,
+      show.sig.stars = TRUE,
+      landscape = TRUE
+)
+
+apa.cor.table(desctable, filename = "desctable.doc")
+
+library(apaTables)
+corrtable <- select(PM, STAIS, STAIT, BAI , PP, N300,  Accuracy)
+apa.cor.table(
+      corrtable,
+      filename = "corrtable2.doc",
+      table.number = 2,
+      show.conf.interval = TRUE,
+      show.sig.stars = TRUE,
+      landscape = TRUE
+)
+apa.cor.table(corrtable, filename = "corrtable.doc")
+```
+# Correlations
+```{r}
+model <- lm(STAIS ~ Gender1, data = PM)
+summary(model)
+
+model <- lm(STAIT ~ Gender1, data = PM)
+summary(model)
+
+
+model <- lm(BAI ~ Gender1, data = PM)
+summary(model)
+
+
+model <- lm(Accuracy ~ Gender1, data = PM)
+summary(model)
+
+
+model <- lm(N300 ~ Gender1, data = PM)
+summary(model)
+
+
+model <- lm(PP ~ Gender1, data = PM)
+summary(model)
+```
+
+
+
+# Correlations: Gender and age with variables
+```{r}
+# Calculate Pearson correlation coefficient between (gender and accuracy)
+corr1 <- cor.test(PM$Gender1, PM$Accuracy,method = "spearman")
+print(corr1$estimate)
+print(corr1$p.value)
+
+# Calculate Pearson correlation coefficient between (gender and PP)
+corr2 <- cor.test(PM$Gender1, PM$PP,method = "spearman")
+print(corr2$estimate)
+print(corr2$p.value)
+
+# Calculate Pearson correlation coefficient between (gender and STAIS)
+corr3 <- cor.test(PM$Gender1, PM$STAIS,method = "spearman")
+print(corr3$estimate)
+print(corr3$p.value)
+
+# Calculate Pearson correlation coefficient between (age and accuracy)
+corr4 <- cor.test(PM$Age, PM$Accuracy,method = "spearman")
+print(corr4$estimate)
+print(corr4$p.value)
+
+# Calculate Pearson correlation coefficient between (age and PP)
+corr5 <- cor.test(PM$Age, PM$PP,method = "spearman")
+print(corr5$estimate)
+print(corr5$p.value)
+
+# Calculate Pearson correlation coefficient between (age and STAIS)
+corr6 <- cor.test(PM$Age, PM$STAIS,method = "spearman")
+print(corr6$estimate)
+print(corr6$p.value)
+```
+
+# Regression: Anxiety controlling for Gender and Age
+```{r}
+## scale = standardizing the coefficients 
+
+fit7 <- lm(scale(Accuracy) ~ scale(STAIS) + Gender1 + Age, data = PM)
+summary(fit7)
+
+fit8 <- lm(scale(PP) ~ scale(STAIS) + Gender1 + Age, data = PM)
+summary(fit8)
+
+fit9 <- lm(scale(Accuracy) ~ scale(PP) + Gender1 + Age, data = PM)
+summary(fit9)
+```
+
+# Regression: Anxiety controlling for Gender and Age (N300)
+```{r}
+## scale = standardizing the coefficients 
+
+fitN300a <- lm(scale(Accuracy) ~ scale(STAIS) + Gender1 + Age, data = PM)
+summary(fitN300a)
+
+fitN300b <- lm(scale(N300) ~ scale(STAIS) + Gender1 + Age, data = PM)
+summary(fitN300b)
+
+fitN300c <- lm(scale(Accuracy) ~ scale(N300) + Gender1 + Age, data = PM)
+summary(fitN300c)
+```
+
+
+#Effect sizes (partial R-squared) for STAIS on Accuracy
+```{r}
+#full linear regression model
+full_model <- lm(Accuracy ~ STAIS + Age + Gender, data = PM)
+# model without the predictor
+reduced_model <- lm(Accuracy ~ Age + Gender, data = PM)
+# R-squared for the full model
+r_squared_full <- summary(full_model)$r.squared
+# R-squared for the reduced model
+r_squared_reduced <- summary(reduced_model)$r.squared
+# Partial R-squared for STAIS while controlling for Age and Gender!!!
+partial_r_squared <- r_squared_full - r_squared_reduced
+print(partial_r_squared)
+```
+
+#Effect sizes (partial R-squared) for STAIS on PP
+```{r}
+#full linear regression model
+full_model <- lm(PP ~ STAIS + Age + Gender, data = PM)
+# model without the predictor
+reduced_model <- lm(PP ~ Age + Gender, data = PM)
+# R-squared for the full model
+r_squared_full <- summary(full_model)$r.squared
+# R-squared for the reduced model
+r_squared_reduced <- summary(reduced_model)$r.squared
+# Partial R-squared for STAIS while controlling for Age and Gender!!!
+partial_r_squared <- r_squared_full - r_squared_reduced
+print(partial_r_squared)
+```
+
+#Effect sizes (partial R-squared) for PP on Accuracy
+```{r}
+#full linear regression model
+full_model <- lm(Accuracy ~ PP + Age + Gender, data = PM)
+# model without the predictor
+reduced_model <- lm(Accuracy ~ Age + Gender, data = PM)
+# R-squared for the full model
+r_squared_full <- summary(full_model)$r.squared
+# R-squared for the reduced model
+r_squared_reduced <- summary(reduced_model)$r.squared
+# Partial R-squared for PP while controlling for Age and Gender!!!
+partial_r_squared <- r_squared_full - r_squared_reduced
+print(partial_r_squared)
+```
+
+#Effect sizes (partial R-squared) for STAIS on Accuracy
+```{r}
+#full linear regression model
+full_model <- lm(Accuracy ~ STAIS + Age + Gender, data = PM)
+# model without the predictor
+reduced_model <- lm(Accuracy ~ Age + Gender, data = PM)
+# R-squared for the full model
+r_squared_full <- summary(full_model)$r.squared
+# R-squared for the reduced model
+r_squared_reduced <- summary(reduced_model)$r.squared
+# Partial R-squared for STAIS while controlling for Age and Gender!!!
+partial_r_squared <- r_squared_full - r_squared_reduced
+print(partial_r_squared)
+```
+
+
+Potential Scatterplots 
+```{r}
+#STAIS and Accuracy 
+p <- ggplot(PM,aes(x=STAIS,y=Accuracy)) +
+          geom_point() + geom_smooth(method=lm, se=FALSE, fullrange=TRUE, color = "black") + theme_minimal() + scale_color_grey()
+p <- p + ggtitle("") + xlab("State Anxiety") + ylab("Prospective Memory") + theme(plot.title = element_text(hjust = 0.5)) + theme(axis.text=element_text(size=20),
+        axis.title=element_text(size=20,face="plain"))
+p
+#ggsave("STAIS_Accuracy", path = '/path/name/here/', bg="white", width = 5, height = 5, device='jpeg', dpi= 700)
+
+#STAIS and PP 
+p <- ggplot(PM,aes(x=STAIS,y=PP)) +
+          geom_point() + geom_smooth(method=lm, se=FALSE, fullrange=TRUE, color = "black") + theme_minimal() + scale_color_grey()
+p <- p + ggtitle("") + xlab("State Anxiety") + ylab("Prospective Positivity") + theme(plot.title = element_text(hjust = 0.5)) + theme(axis.text=element_text(size=20),
+        axis.title=element_text(size=20,face="plain"))
+p
+#ggsave("STAIS_PP", path = '/path/name/here/', bg="white", width = 5, height = 5, device='jpeg', dpi= 700)
+
+#PP and Accuracy 
+p <- ggplot(PM,aes(x=PP,y=Accuracy)) +
+          geom_point() + geom_smooth(method=lm, se=FALSE, fullrange=TRUE, color = "black") + theme_minimal() + scale_color_grey()
+p <- p + ggtitle("") + xlab("Prospective Positivity") + ylab("Prospective Memory") + theme(plot.title = element_text(hjust = 0.5)) + theme(axis.text=element_text(size=20),
+        axis.title=element_text(size=20,face="plain"))
+p
+#ggsave("PP_Accuracy", path = '/path/name/here/', bg="white", width = 5, height = 5, device='jpeg', dpi= 700)
+```
+
+
+# Mediation
+```{r}
+# Anxiety -> PP -> Accuracy
+
+#install.packages("mediation")
+#install.packages("minqa")
+#library(mediation)
+
+model.M <- lm(PP ~ STAIS + Gender1 + Age, data = PM)
+model.Y <- lm(Accuracy ~ PP + STAIS + Gender1 + Age, data =PM)
+results <- mediation::mediate(model.M, model.Y, treat =  "STAIS", mediator= 'PP', 
+                              boot=TRUE, sims=10000)
+summary(results)
+
+
+```
+
+# Regression: Non-significant stuff
+```{r}
+## scale = standardizing the coefficients 
+
+## Anxiety and PM
+
+fitA <- lm(scale(Accuracy) ~ scale(STAIT) + Gender1 + Age, data = PM)
+summary(fitA)
+
+fitB <- lm(scale(Accuracy) ~ scale(BAI) + Gender1 + Age, data = PM)
+summary(fitB)
+
+fitC <- lm(scale(RT) ~ scale(STAIS) + Gender1 + Age, data = PM)
+summary(fitC)
+
+fitD <- lm(scale(RT) ~ scale(STAIT) + Gender1 + Age, data = PM)
+summary(fitD)
+
+fitE <- lm(scale(RT) ~ scale(BAI) + Gender1 + Age, data = PM)
+summary(fitE)
+
+## ERPs and PM
+
+fitF <- lm(scale(RT) ~ scale(PP) + Gender1 + Age, data = PM)
+summary(fitF)
+
+fitG <- lm(scale(RT) ~ scale(N300) + Gender1 + Age, data = PM)
+summary(fitG)
+
+fitH <- lm(scale(Accuracy) ~ scale(N300) + Gender1 + Age, data = PM)
+summary(fitH)
+
+## Anxiety and ERPs
+
+fitI <- lm(scale(PP) ~ scale(STAIT) + Gender1 + Age, data = PM)
+summary(fitI)
+
+fitJ <- lm(scale(PP) ~ scale(BAI) + Gender1 + Age, data = PM)
+summary(fitJ)
+
+fitK <- lm(scale(N300) ~ scale(STAIT) + Gender1 + Age, data = PM)
+summary(fitK)
+
+fitL <- lm(scale(N300) ~ scale(BAI) + Gender1 + Age, data = PM)
+summary(fitL)
+
+fitM <- lm(scale(N300) ~ scale(STAIS) + Gender1 + Age, data = PM)
+summary(fitM)
+
+```
+
+# Effect sizes: Non-significant stuff
+```{r}
+## Anxiety and PM
+
+#Effect sizes (partial R-squared) for TRAIT on PM
+#full linear regression model
+full_model <- lm(Accuracy ~ STAIT + Age + Gender1, data = PM)
+# model without the predictor
+reduced_model <- lm(Accuracy ~ Age + Gender1, data = PM)
+# R-squared for the full model
+r_squared_full <- summary(full_model)$r.squared
+# R-squared for the reduced model
+r_squared_reduced <- summary(reduced_model)$r.squared
+partial_r_squared <- r_squared_full - r_squared_reduced
+print(partial_r_squared)
+
+```
+
+```{r}
+#Effect sizes (partial R-squared) for BAI on PM
+#full linear regression model
+
+full_model <- lm(Accuracy ~ BAI + Age + Gender1, data = PM)
+# model without the predictor
+reduced_model <- lm(Accuracy ~ Age + Gender1, data = PM)
+# R-squared for the full model
+r_squared_full <- summary(full_model)$r.squared
+# R-squared for the reduced model
+r_squared_reduced <- summary(reduced_model)$r.squared
+partial_r_squared <- r_squared_full - r_squared_reduced
+print(partial_r_squared)
+```
+
+```{r}
+## Anxiety and ERPs
+
+#Effect sizes (partial R-squared) for TRAIT on PP
+#full linear regression model
+full_model <- lm(PP ~ STAIT + Age + Gender1, data = PM)
+# model without the predictor
+reduced_model <- lm(PP ~ Age + Gender1, data = PM)
+# R-squared for the full model
+r_squared_full <- summary(full_model)$r.squared
+# R-squared for the reduced model
+r_squared_reduced <- summary(reduced_model)$r.squared
+partial_r_squared <- r_squared_full - r_squared_reduced
+print(partial_r_squared)
+```
+
+
+```{r}
+#Effect sizes (partial R-squared) for BAI on PP
+#full linear regression model
+
+full_model <- lm(PP ~ BAI + Age + Gender1, data = PM)
+# model without the predictor
+reduced_model <- lm(PP ~ Age + Gender1, data = PM)
+# R-squared for the full model
+r_squared_full <- summary(full_model)$r.squared
+# R-squared for the reduced model
+r_squared_reduced <- summary(reduced_model)$r.squared
+partial_r_squared <- r_squared_full - r_squared_reduced
+print(partial_r_squared)
+```
+
+
+
+```{r}
+#Effect sizes (partial R-squared) for TRAIT on N300
+
+#full linear regression model
+full_model <- lm(N300 ~ STAIT + Age + Gender1, data = PM)
+# model without the predictor
+reduced_model <- lm(N300 ~ Age + Gender1, data = PM)
+# R-squared for the full model
+r_squared_full <- summary(full_model)$r.squared
+# R-squared for the reduced model
+r_squared_reduced <- summary(reduced_model)$r.squared
+partial_r_squared <- r_squared_full - r_squared_reduced
+print(partial_r_squared)
+```
+
+
+```{r}
+#Effect sizes (partial R-squared) for BAI on N300
+#full linear regression model
+full_model <- lm(N300 ~ BAI + Age + Gender1, data = PM)
+# model without the predictor
+reduced_model <- lm(N300 ~ Age + Gender1, data = PM)
+# R-squared for the full model
+r_squared_full <- summary(full_model)$r.squared
+# R-squared for the reduced model
+r_squared_reduced <- summary(reduced_model)$r.squared
+partial_r_squared <- r_squared_full - r_squared_reduced
+print(partial_r_squared)
+```
+
+
+```{r}
+#Effect sizes (partial R-squared) for STAIS on N300
+
+#full linear regression model
+full_model <- lm(N300 ~ STAIS + Age + Gender1, data = PM)
+# model without the predictor
+reduced_model <- lm(N300 ~ Age + Gender1, data = PM)
+# R-squared for the full model
+r_squared_full <- summary(full_model)$r.squared
+# R-squared for the reduced model
+r_squared_reduced <- summary(reduced_model)$r.squared
+partial_r_squared <- r_squared_full - r_squared_reduced
+print(partial_r_squared)
+
+```
+
+
+
+# Anxiety score info for descriptives
+```{r}
+# STAIT
+low <- filter(PM, BAI <= 15)
+
+high <- filter(PM, BAI > 26)
+
+view(high)
+
+```
+
+
+
+
